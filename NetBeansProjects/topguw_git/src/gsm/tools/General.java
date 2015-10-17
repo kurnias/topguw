@@ -36,15 +36,6 @@ import java.util.regex.Pattern;
 @SuppressWarnings("serial")
 public class General extends Principal {
 
-    public static void main(String[] args) {
-
-        try {
-            binToCfile(new File("/root/workspace/projet_gsm-master/936399961_AIRPROBE_OUTPUT_BIN"));
-        } catch (IOException ex) {
-            Logger.getLogger(General.class.getName()).log(Level.SEVERE, null, ex);
-        }
-    }
-
     /**
      * Decimation rate for go.sh (RTL_SDR based) edit if you an other device to
      * capture data
@@ -115,7 +106,7 @@ public class General extends Principal {
         int byte1, byte2;
         InputStream buffy = new BufferedInputStream(new FileInputStream(binfile));
         BufferedOutputStream dataOut = new BufferedOutputStream(
-                new FileOutputStream(binfile.getAbsoluteFile() + ".cfile_test"));
+                new FileOutputStream(binfile.getAbsoluteFile() + ".cfile"));
         while ((byte1 = buffy.read()) != -1) {
             if ((byte2 = buffy.read()) == -1) {
                 dataOut.close();
