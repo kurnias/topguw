@@ -398,7 +398,7 @@ public class Principal extends JPanel {
                 localCmd.append(START_LINE + "Start getting SI plaintext, please wait...\n");
                 localCmd.update(localCmd.getGraphics());
                 ArrayList<String[]> tempSiPosition = Dedicated.getSysInfo(dedicatedChannelTab);
-                if (tempSiPosition.size() == 0) {
+                if (tempSiPosition.isEmpty()) {
                     localCmd.append(START_LINE + "Sorry but no SI plaintext have been discovered.\n");
                     localCmd.append(START_LINE + "Maybe you should sniff longer the GSM tower.\n");
                     localCmd.update(localCmd.getGraphics());
@@ -607,7 +607,8 @@ public class Principal extends JPanel {
             
 
     public void actionPerformed(ActionEvent e) {
-        if (JOptionPane.showConfirmDialog(null, "Do you want to try scan for GSM tower[YES] or sniff a frequency[NO].", "Make your choice",
+        if (JOptionPane.showConfirmDialog(null, "Do you want to try scan for"
+                + " GSM tower[YES] or sniff a frequency[NO].", "Scan or snif",
                 JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE)
                 == JOptionPane.YES_OPTION) {
             lblGain.setVisible(true);
@@ -616,8 +617,8 @@ public class Principal extends JPanel {
             btnGo.setVisible(true);
         } else {
             String fr = JOptionPane.showInputDialog(frmTopguw,
-                    "Which frequency do you want to snif?");
-            if (General.isInteger(fr)) {
+                    "Which frequency do you want to snif (in Hz) ?");
+            if (General.isInteger(fr) && fr.length() == 9) {
                 frequency = fr;
                 lblGain.setVisible(true);
                 sliderGainKal.setVisible(true);
