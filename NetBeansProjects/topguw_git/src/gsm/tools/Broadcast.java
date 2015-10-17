@@ -12,13 +12,8 @@ import java.util.ArrayList;
  */
 public class Broadcast {
 	
-	public static void main(String[] args) {
-		//String s = "1218286 0: 2d 06 3f 00 52 c0 0d 19 b3 68 03 00 2b 2b 2b 2b 2b 2b 2b 2b 2b 2b 2b";
-		//extraireTsConf(ligneToTab(s));
-	}
-	
 	/**
-	 * Convert ArrayList<String> into ArrayList<String[]> (split with spaces)
+	 * Convert ArrayList of String into ArrayList of String[] (split with spaces)
 	 * @param inLine 
 	 * @return splitted line into an ArrayList
 	 */
