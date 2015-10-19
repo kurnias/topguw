@@ -1,4 +1,5 @@
-# topguw
+# Topguw
+### About
 Topguw is a little software that I made to help people who want to analyse and then crack GSM. 
 Topguw works with airprobe and kalibrate-rtl. 
 It makes some steps of the know-plaintext attack vector to GSM automatically (Karsten Nohl).
@@ -8,20 +9,18 @@ It makes some steps of the know-plaintext attack vector to GSM automatically (Ka
   1. Firstly you have to install airprobe and gsmframecoder (airprobe depends on gnu-radio **3.6**, so if you use Kali 2 for example you have 2 solution -> downgrade to kali 1 or use the zmiana).
   2. You should install kalibrate-rtl too (Topguw uses kal command to scan GSM tower).
 
-2. You can run the .jar or import sources with Netbean
-
+2. Run
+  1. From a shell start the jar with "java -jar Topwub.jar"
+  2. Use Netbean to import the project and run from Netbean
 
 ## How to use
 1. First step
 2. Second step
 3. Third step
 
+## Disclaimer
 
-
-
-NOTICE: 
-Copyright (c) 2015, Bastien Enjalbert
-All rights reserved.
+Copyright (c) 2015, Bastien Enjalbert All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
