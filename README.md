@@ -6,13 +6,13 @@ It makes some steps of the know-plaintext attack vector to GSM automatically (Ka
 
 ## How to install
 1. Dependencies 
-  1. Firstly you have to install airprobe and gsmframecoder (airprobe depends on gnu-radio **3.6**, so if you use Kali 2 for example you have 2 solution -> downgrade to kali 1 or use the zmiana).
-  2. You should install kalibrate-rtl too (Topguw uses kal command to scan GSM tower).
-  3. Not really a dependencies, just to tell you that I use Oracle JDK 1.8 to run Topguw.
+  -  Firstly you have to install airprobe and gsmframecoder (airprobe depends on gnu-radio **3.6**, so if you use Kali 2 for example you have 2 solution -> downgrade to kali 1 or use the zmiana).
+  -  You should install kalibrate-rtl too (Topguw uses kal command to scan GSM tower).
+  -  Not really a dependencies, just to tell you that I use Oracle JDK 1.8 to run Topguw.
 
 2. Run
-  1. From a shell start the jar with "java -jar Topwub.jar"
-  2. Use Netbean to import the project and run from Netbean
+  -  From a shell start the jar with "java -jar Topwub.jar"
+  -  Use Netbean to import the project and run from Netbean
 
 ## How to use
 1. First step
