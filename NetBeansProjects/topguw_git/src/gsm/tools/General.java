@@ -18,7 +18,6 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
@@ -37,10 +36,16 @@ import java.util.regex.Pattern;
 public class General extends Principal {
 
     /**
-     * Decimation rate for go.sh (RTL_SDR based) edit if you an other device to
-     * capture data
+     * Decimation rate for airprobe 64 : rtl-sdr 112 : usrp (if I remember
+     * good...)
+     *
      */
     public static final String DEC_RATE = "64";
+
+    /**
+     * BTS Configuration (0C -> combined , 0B -> non-combined)
+     */
+    public static final String BTSCONF = "0B";
 
     /**
      * Base regex for a SDCCH ou SACCH frame example : C1 1218124 1881368:
@@ -69,7 +74,7 @@ public class General extends Principal {
      * error (-1 fn=1218138)
      */
     public static Pattern RGX_PARITY
-            = Pattern.compile("cch.c:[0-9]*.*\\)$");
+            = Pattern.compile("cch.c:419 error: sacch: parity error \\(-1 fn=([0-9]*)\\)");
 
     /**
      * Base regex for a "WRN" error example : WRN: errors=18 fn=1218189
@@ -112,10 +117,48 @@ public class General extends Principal {
                 dataOut.close();
                 break;
             }
-            dataOut.write(ByteBuffer.allocate(4).putFloat((byte1 - 127) * 1 / 128).array(), 0, 4);
-            dataOut.write(ByteBuffer.allocate(4).putFloat((byte2 - 127) * 1 / 128).array(), 0, 4);
+            // TODO ; SAVE IN LITTLE ENDIAN !!!
+            dataOut.write(reverseByteOrder(ByteBuffer.allocate(4).putFloat((byte1 - 127) * 1 / 128).array()), 0, 4);
+            dataOut.write(reverseByteOrder(ByteBuffer.allocate(4).putFloat((byte2 - 127) * 1 / 128).array()), 0, 4);
         }
         dataOut.close();
+    }
+
+    /**
+     * Reverse order of byte in an array of byte Used here to make Big to Little
+     * Endian
+     *
+     * @param bytes the array contains bytes
+     * @return the array contains bytes reversed
+     */
+    public static byte[] reverseByteOrder(byte[] bytes) {
+
+        byte[] newArrayOfBytes = new byte[4];
+        newArrayOfBytes[0] = bytes[3];
+        newArrayOfBytes[1] = bytes[2];
+        newArrayOfBytes[2] = bytes[1];
+        newArrayOfBytes[3] = bytes[0];
+        
+        return newArrayOfBytes;
+    }
+
+    /**
+     * Determine if a file is a cfile
+     *
+     * @return true is the file is a cfile, false otherwhise
+     * @param file the file to test
+     */
+    public static boolean isCfile(File file) {
+        try {
+            InputStream buffy = new BufferedInputStream(new FileInputStream(file));
+        } catch (FileNotFoundException ex) {
+            return false;
+        }
+        // test only the first 20 bytes
+        for (int i = 0; i < 20; i++) {
+            // TODO : find the best way to make this test
+        }
+        return true;
     }
 
     /**
@@ -123,11 +166,12 @@ public class General extends Principal {
      *
      * @param dir the current working dir
      */
-    public static ProcessBuilder rtlSdrSnif(String dir, String frequency, String gain) {
+    public static ProcessBuilder rtlSdrSnif(String dir, String frequency, String gain, String samplerate) {
         ProcessBuilder pb = new ProcessBuilder("rtl_sdr", "-f",
                 frequency,
                 "-g", gain,
-                frequency + "_AIRPROBE_OUTPUT_BIN");
+                frequency + "_AIRPROBE_OUTPUT_BIN",
+                "-s", samplerate);
         pb.directory(new File(dir));
         return pb;
     }
@@ -257,7 +301,7 @@ public class General extends Principal {
      * @return true if it has already been processed, false if not
      */
     public static boolean alreadyDone(File cfile) {
-        if (new File(cfile.getAbsolutePath() + "_0B").exists()) {
+        if (new File(cfile.getAbsolutePath() + "_" + BTSCONF).exists()) {
             for (int i = 0; i < 7; i++) {
                 if (new File(cfile.getAbsolutePath() + "_" + Integer.toString(i) + "S").exists()) {
                     timeslot = Integer.toString(i);
@@ -340,6 +384,9 @@ public class General extends Principal {
          */
         for (int liste = 0; liste < aTraiter.size(); liste++) {
             String i = aTraiter.get(liste);
+            // frame lenght compared to frame number (will not be the same 
+            // if the fn is 111 or 12255 for exemple)
+            int framelenght;
             // if  :
             if (i.length() < 133
                     && !(RGX_WRN_ERR.matcher(i).matches()
@@ -349,16 +396,19 @@ public class General extends Principal {
                     || RGX_CANNOT_DEC.matcher(i).matches())) {
                 System.out.println(i + " capté");
                 for (int subList = liste; liste + 20 < aTraiter.size() && subList < liste + 20; subList++) {
-                    if (aTraiter.get(subList).length() + i.length() == 133
-                            && !(RGX_WRN_ERR.matcher(aTraiter.get(subList)).matches()
+
+                    if (!(RGX_WRN_ERR.matcher(aTraiter.get(subList)).matches()
                             || RGX_CONVDEC_ERR.matcher(aTraiter.get(subList)).matches()
                             || RGX_FRAME_DEC.matcher(aTraiter.get(subList)).matches()
                             || RGX_PARITY.matcher(aTraiter.get(subList)).matches()
                             || RGX_CANNOT_DEC.matcher(aTraiter.get(subList)).matches())) {
-                        // We concatenate frame correctly
 
-                        aTraiter.set(liste, i + aTraiter.get(subList));
-                        aTraiter.remove(subList);
+                        if (RGX_FRAME_CCCH.matcher(i + aTraiter.get(subList)).matches()) {
+                            // We concatenate frame correctly
+
+                            aTraiter.set(liste, i + aTraiter.get(subList));
+                            aTraiter.remove(subList);
+                        }
                     }
                 }
             }
@@ -385,9 +435,9 @@ public class General extends Principal {
 
         //if(!(f.exists() && !f.isDirectory())) {  
         // Extract 
-        ProcessBuilder pb = new ProcessBuilder("sh", "go.sh", file.getAbsolutePath(), DEC_RATE, "0B");
+        ProcessBuilder pb = new ProcessBuilder("sh", "go.sh", file.getAbsolutePath(), DEC_RATE, BTSCONF);
         pb.directory(new File(gsmReceivePath + "/src/python/"));
-        pb.redirectOutput(new File(file.getAbsolutePath() + "_0B"));
+        pb.redirectOutput(new File(file.getAbsolutePath() + "_" + BTSCONF));
 
         // avoid infinite time out with big cfile
         pb.redirectErrorStream(true);
@@ -398,7 +448,7 @@ public class General extends Principal {
         p.destroyForcibly();
         //	}
         // We get broadcast channel
-        broadcastChannelTab = Broadcast.lignesToTab(readFile(file.getAbsolutePath() + "_0B"));
+        broadcastChannelTab = Broadcast.lignesToTab(readFile(file.getAbsolutePath() + "_" + BTSCONF));
 
         // Potential Immediate Assignment index
         ArrayList<Integer> imAs = Broadcast.extractImAs(broadcastChannelTab);

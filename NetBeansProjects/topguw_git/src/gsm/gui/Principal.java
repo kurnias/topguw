@@ -3,6 +3,7 @@ package gsm.gui;
 import gsm.tools.Broadcast;
 import gsm.tools.Dedicated;
 import gsm.tools.General;
+import static gsm.tools.General.BTSCONF;
 import gsm.tools.Kalibrate;
 
 import java.awt.EventQueue;
@@ -45,7 +46,6 @@ import javax.swing.ButtonGroup;
 
 import javax.swing.JLabel;
 import javax.swing.JComboBox;
-import javax.swing.JRadioButton;
 
 @SuppressWarnings("serial")
 public class Principal extends JPanel {
@@ -59,7 +59,7 @@ public class Principal extends JPanel {
     protected static File file;
 
     /**
-     * 0B output for the cfile from airprobe
+     * 0B or 0C output for the cfile from airprobe
      */
     protected static ArrayList<String[]> broadcastChannelTab = null;
 
@@ -464,7 +464,7 @@ public class Principal extends JPanel {
                             if (dialogResult == JOptionPane.YES_OPTION) {
                                 General.getAirprobeOutput(file);
                             } else {
-                                broadcastChannelTab = Broadcast.lignesToTab(General.readFile(file.getAbsolutePath() + "_0B"));
+                                broadcastChannelTab = Broadcast.lignesToTab(General.readFile(file.getAbsolutePath() + "_" + BTSCONF));
                                 dedicatedChannelTab = Dedicated.lignesToTab(General.readFile(file.getAbsolutePath() + "_" + timeslot + "S"));
 
                             }
@@ -562,7 +562,7 @@ public class Principal extends JPanel {
 						// Start sniffing
                     // TODO snif with "rtl_sdr" command from kali
 
-                    Process p = General.rtlSdrSnif(System.getProperty("user.dir"), frequency, Integer.toString(sliderGainKal.getValue())).start();
+                    Process p = General.rtlSdrSnif(System.getProperty("user.dir"), frequency, Integer.toString(sliderGainKal.getValue()), "1e6").start();
 
                     // Allow user to stop sniffing when he wants to
                     Object[] options = {"Stop sniffing"};
@@ -581,7 +581,6 @@ public class Principal extends JPanel {
                     localCmd.update(localCmd.getGraphics());
                     General.binToCfile(new File(frequency + "_AIRPROBE_OUTPUT_BIN"));
                     localCmd.append(START_LINE + "Bin file converted.\n");
-                    localCmd.append(START_LINE + "Please use open cfile if you want to use it .\n");
 
                 } catch (IOException ex) {
                     Logger.getLogger(Principal.class.getName()).log(Level.SEVERE, null, ex);
@@ -601,7 +600,7 @@ public class Principal extends JPanel {
         /**
          * SCAN GSM BUTTON
          */
-        JButton btnScanGsmCell = new JButton("Scan GSM cell");
+        JButton btnScanGsmCell = new JButton("Scan/sniff GSM cell");
 
     btnScanGsmCell.addActionListener ( new ActionListener() {
             
@@ -624,11 +623,12 @@ public class Principal extends JPanel {
                 sliderGainKal.setVisible(true);
                 mnGsmBand.setVisible(true);
                 btnGo.setVisible(true);
+                localCmd.append(START_LINE + "Frequency " + fr +  "is correctly settup.\n");
             } else {
                 localCmd.append(START_LINE + "Specified frequency seems not to be valid.\n");
-                localCmd.update(localCmd.getGraphics());
+               
             }
-
+            localCmd.update(localCmd.getGraphics());
         }
 
     }
