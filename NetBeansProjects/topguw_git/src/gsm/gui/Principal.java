@@ -33,7 +33,7 @@ import gsm.tools.General;
 import gsm.conf.Configuration ;
 import gsm.tools.Kalibrate;
 
-import java.awt.EventQueue;
+
 
 import javax.swing.JFrame;
 import javax.swing.JButton;
@@ -43,16 +43,15 @@ import javax.swing.JFileChooser;
 import javax.swing.JScrollPane;
 import javax.swing.JSlider;
 import javax.swing.JTextField;
-
-import java.awt.SystemColor;
-
+import javax.swing.JSeparator;
+import javax.swing.JLabel;
+import javax.swing.JComboBox;
 import javax.swing.JTextArea;
 
 import java.awt.Font;
-
-import javax.swing.JSeparator;
-
+import java.awt.SystemColor;
 import java.awt.event.ActionListener;
+import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
@@ -69,10 +68,7 @@ import java.awt.Dimension;
 import java.awt.GridLayout;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.swing.ButtonGroup;
 
-import javax.swing.JLabel;
-import javax.swing.JComboBox;
 
 @SuppressWarnings("serial")
 public class Principal extends JPanel {
@@ -194,6 +190,7 @@ public class Principal extends JPanel {
         localCmd.setEditable(false);
         localCmd.setBounds(57, 145, 700, 255);
         localCmd.setText("Welcome on Topguw, a help to analyze GSM.\n");
+        localCmd.setText("Topguw is currently in beta version.\n");
         localCmd.append("Bastien Enjalbert, bastien.enjalbert@gmail.com\n\n");
         localCmd.setLineWrap(true);
         localCmd.setWrapStyleWord(true);
