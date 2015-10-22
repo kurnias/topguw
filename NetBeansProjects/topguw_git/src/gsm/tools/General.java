@@ -6,10 +6,12 @@ package gsm.tools;
 
 import gsm.gui.Principal;
 import java.io.BufferedInputStream;
+import gsm.conf.Configuration;
 import java.io.BufferedOutputStream;
-
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -21,32 +23,31 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import static sun.text.normalizer.UTF16.append;
 
 /**
- * General management tools for application(i/o file, ...)
+ * General management tools for application(i/o file, pattern, ...)
  *
  * @author Enjalbert Bastien
  */
 @SuppressWarnings("serial")
 public class General extends Principal {
 
-    /**
-     * Decimation rate for airprobe 64 : rtl-sdr 112 : usrp (if I remember
-     * good...)
-     *
-     */
-    public static final String DEC_RATE = "64";
-
-    /**
-     * BTS Configuration (0C -> combined , 0B -> non-combined)
-     */
-    public static final String BTSCONF = "0B";
-
+    public static void main(String[] args) {
+        try {
+            binToCfile(new File("/root/hacking/gsm_dump/test"));
+        } catch (IOException ex) {
+            Logger.getLogger(General.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+    
     /**
      * Base regex for a SDCCH ou SACCH frame example : C1 1218124 1881368:
      * 011010011101111.......10010000110101011
@@ -74,7 +75,7 @@ public class General extends Principal {
      * error (-1 fn=1218138)
      */
     public static Pattern RGX_PARITY
-            = Pattern.compile("cch.c:419 error: sacch: parity error \\(-1 fn=([0-9]*)\\)");
+            = Pattern.compile("cch.c:[0-9]* error: sacch: parity error \\(-1 fn=([0-9]*)\\)");
 
     /**
      * Base regex for a "WRN" error example : WRN: errors=18 fn=1218189
@@ -105,42 +106,28 @@ public class General extends Principal {
      */
     public static void binToCfile(File binfile) throws IOException {
         // TODO : ne pas emcombrer la mémoire et libérer l'espace au fur 
-        // et a mesure (que 2 bytes occuper à la fois normalement)
+              // et a mesure (que 2 bytes occuper à la fois normalement)
 
         int i = 0;
         int byte1, byte2;
+        int temp1, temp2;
+        byte[] bytes = new byte[4];
+        int bits;
         InputStream buffy = new BufferedInputStream(new FileInputStream(binfile));
-        BufferedOutputStream dataOut = new BufferedOutputStream(
-                new FileOutputStream(binfile.getAbsoluteFile() + ".cfile"));
+        LittleEndianOutputStream dataOut = 
+                new LittleEndianOutputStream(new BufferedOutputStream(new FileOutputStream(binfile.getAbsoluteFile() + ".cfile")));
         while ((byte1 = buffy.read()) != -1) {
             if ((byte2 = buffy.read()) == -1) {
                 dataOut.close();
                 break;
             }
-            // TODO ; SAVE IN LITTLE ENDIAN !!!
-            dataOut.write(reverseByteOrder(ByteBuffer.allocate(4).putFloat((byte1 - 127) * 1 / 128).array()), 0, 4);
-            dataOut.write(reverseByteOrder(ByteBuffer.allocate(4).putFloat((byte2 - 127) * 1 / 128).array()), 0, 4);
+            dataOut.writeFloat(((float)byte1 - 127) * 1 / 128);
+            dataOut.writeFloat(((float)byte2 - 127) * 1 / 128);
+    
         }
         dataOut.close();
     }
 
-    /**
-     * Reverse order of byte in an array of byte Used here to make Big to Little
-     * Endian
-     *
-     * @param bytes the array contains bytes
-     * @return the array contains bytes reversed
-     */
-    public static byte[] reverseByteOrder(byte[] bytes) {
-
-        byte[] newArrayOfBytes = new byte[4];
-        newArrayOfBytes[0] = bytes[3];
-        newArrayOfBytes[1] = bytes[2];
-        newArrayOfBytes[2] = bytes[1];
-        newArrayOfBytes[3] = bytes[0];
-        
-        return newArrayOfBytes;
-    }
 
     /**
      * Determine if a file is a cfile
@@ -301,7 +288,7 @@ public class General extends Principal {
      * @return true if it has already been processed, false if not
      */
     public static boolean alreadyDone(File cfile) {
-        if (new File(cfile.getAbsolutePath() + "_" + BTSCONF).exists()) {
+        if (new File(cfile.getAbsolutePath() + "_" + Configuration.BTSCONF).exists()) {
             for (int i = 0; i < 7; i++) {
                 if (new File(cfile.getAbsolutePath() + "_" + Integer.toString(i) + "S").exists()) {
                     timeslot = Integer.toString(i);
@@ -435,9 +422,9 @@ public class General extends Principal {
 
         //if(!(f.exists() && !f.isDirectory())) {  
         // Extract 
-        ProcessBuilder pb = new ProcessBuilder("sh", "go.sh", file.getAbsolutePath(), DEC_RATE, BTSCONF);
+        ProcessBuilder pb = new ProcessBuilder("sh", "go.sh", file.getAbsolutePath(), Configuration.DEC_RATE, Configuration.BTSCONF);
         pb.directory(new File(gsmReceivePath + "/src/python/"));
-        pb.redirectOutput(new File(file.getAbsolutePath() + "_" + BTSCONF));
+        pb.redirectOutput(new File(file.getAbsolutePath() + "_" + Configuration.BTSCONF));
 
         // avoid infinite time out with big cfile
         pb.redirectErrorStream(true);
@@ -448,7 +435,7 @@ public class General extends Principal {
         p.destroyForcibly();
         //	}
         // We get broadcast channel
-        broadcastChannelTab = Broadcast.lignesToTab(readFile(file.getAbsolutePath() + "_" + BTSCONF));
+        broadcastChannelTab = Broadcast.lignesToTab(readFile(file.getAbsolutePath() + "_" + Configuration.BTSCONF));
 
         // Potential Immediate Assignment index
         ArrayList<Integer> imAs = Broadcast.extractImAs(broadcastChannelTab);
@@ -460,13 +447,13 @@ public class General extends Principal {
         // else : if there is Immediate Assignment
 
         for (int i = 0; i < imAs.size() && finish == false; i++) {
-            if (Broadcast.extractTsConf(broadcastChannelTab.get(imAs.get(i))).get(1) == "1") {
+            if ("1".equals(Broadcast.extractTsConf(broadcastChannelTab.get(imAs.get(i))).get(1))) {
                 // if an immediate assignment redirects to a dedicated channel
                 // pb.redirectOutput(new File(fichier.getAbsolutePath() + "0B"));
                 timeslot = Broadcast.extractTsConf(broadcastChannelTab.get(imAs.get(i))).get(0);
                 pb = new ProcessBuilder("sh", "go.sh",
                         file.getAbsolutePath(),
-                        DEC_RATE,
+                        Configuration.DEC_RATE,
                         timeslot + "S"
                 );
                 pb.directory(new File(gsmReceivePath + "/src/python/"));
@@ -490,15 +477,15 @@ public class General extends Principal {
      * @param beginBursts the array that contains bursts
      * @param endBursts the second array that contains bursts
      * @param fn the plaintext frame number
-     * @param the plaintext system information type
      * @param fnEnc the encrypted frame number
+     * @return  all bursts (4 at maximum) xored
      */
     public static String[] xorBursts(String[] beginBursts, String[] endBursts, String fn, String fnEnc) {
         String[] xoredBursts = new String[6];
         xoredBursts[4] = fn;
         xoredBursts[5] = fnEnc;
 
-        StringBuilder oneXoredBurst = null;
+        StringBuilder oneXoredBurst;
 
         for (int j = 0; j < 4; j++) {
             if (isABurst(beginBursts[j]) && isABurst(endBursts[j])) {
@@ -525,7 +512,7 @@ public class General extends Principal {
      */
     public static String[] xorBursts(String[] beginBursts, String[] endBursts) {
         String[] xoredBursts = new String[4];
-        StringBuilder oneXoredBurst = null;
+        StringBuilder oneXoredBurst;
 
         for (int j = 0; j < 4; j++) {
             if (isABurst(beginBursts[j]) && isABurst(endBursts[j])) {
@@ -598,7 +585,7 @@ public class General extends Principal {
     }
 
     /**
-     * ArrayList<String[]> to ArrayList<String>
+     * ArrayList of String array to ArrayList of String
      *
      * @param liste
      * @return listeString
