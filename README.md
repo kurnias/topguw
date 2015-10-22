@@ -14,8 +14,8 @@ V0.1
   -  Not really a dependencies, just to tell you that I use Oracle JDK 1.8 to run Topguw.
 
 2. Run
-  -  From a shell start the jar with "java -jar Topwub.jar"
-  -  Use Netbean to import the project and run from Netbean
+  -  From a shell, you can start the jar with "java -jar Topguw.jar" 
+  -  Use Netbean to import the project and run from Netbean, main class is Principal.java
 
 ## How to use
 1. First step
