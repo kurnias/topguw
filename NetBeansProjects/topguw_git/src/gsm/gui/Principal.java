@@ -1,9 +1,36 @@
+/* Principal.java
+ * --------------------------------- DISCLAMER ---------------------------------
+ * Copyright (c) 2015, Bastien Enjalbert All rights reserved.
+ * Redistribution and use in source and binary forms, with or without modification, 
+ * are permitted provided that the following conditions are met:
+ *
+ * Redistributions of source code must retain the above copyright notice, 
+ * this list of conditions and the following disclaimer.
+ * Redistributions in binary form must reproduce the above copyright notice, 
+ * this list of conditions and the following disclaimer in the documentation 
+ * and/or other materials provided with the distribution.
+
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. 
+ * IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, 
+ * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, 
+ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, 
+ * OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, 
+ * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * The views and conclusions contained in the software and documentation are 
+ * those of the authors and should not be interpreted as representing official 
+ * policies, either expressed or implied, of the FreeBSD Project.
+ */
+
 package gsm.gui;
 
 import gsm.tools.Broadcast;
 import gsm.tools.Dedicated;
 import gsm.tools.General;
-import static gsm.tools.General.BTSCONF;
+import gsm.conf.Configuration ;
 import gsm.tools.Kalibrate;
 
 import java.awt.EventQueue;
@@ -270,7 +297,7 @@ public class Principal extends JPanel {
                     PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter(file.getAbsolutePath() + "_SI_BURSTS_NO_TA")));
                     for (int i = 0; i < systemInfo.size(); i++) {
 
-                        String[] frameBursts = Dedicated.getBursts(systemInfo.get(i)[1], null, null);
+                        String[] frameBursts = Dedicated.getBursts(systemInfo.get(i)[1], systemInfo.get(i)[0], "SI5");
                         //siBursts.add(frameBursts);
 
                         out.println(systemInfo.get(i)[2] + " fn : " + systemInfo.get(i)[0] + " hex frame : " + systemInfo.get(i)[1]);
@@ -359,14 +386,14 @@ public class Principal extends JPanel {
                         //System.out.println("plaintext frame number = " + Integer.parseInt(plaintextBursts.get(j)[4]));
                         //System.out.println("with encrypted  = " + encryptedSiPosition.get(i)[2]);
                         if (encryptedSiPosition.get(i)[0].equals(plaintextBursts.get(j)[4])) {
-                            /* WITH SOME OTHER INFORMATIONS
+                            // WITH SOME OTHER INFORMATIONS
                              temp = General.xorBursts(plaintextBursts.get(j),
                              Dedicated.getBurstsFromFn(encryptedSiPosition.get(i)[2]),
                              "know : " + plaintextBursts.get(j)[4],
                              "enc : " + encryptedSiPosition.get(i)[2]
                              );
                              /********** WITHOUT OTHER INFORMATIONS **************/
-                            temp = General.xorBursts(plaintextBursts.get(j),
+                           /* temp = General.xorBursts(plaintextBursts.get(j),
                                     Dedicated.getBurstsFromFn(encryptedSiPosition.get(i)[2]));
                             /**
                              * ***********************************************
@@ -464,7 +491,7 @@ public class Principal extends JPanel {
                             if (dialogResult == JOptionPane.YES_OPTION) {
                                 General.getAirprobeOutput(file);
                             } else {
-                                broadcastChannelTab = Broadcast.lignesToTab(General.readFile(file.getAbsolutePath() + "_" + BTSCONF));
+                                broadcastChannelTab = Broadcast.lignesToTab(General.readFile(file.getAbsolutePath() + "_" + Configuration.BTSCONF));
                                 dedicatedChannelTab = Dedicated.lignesToTab(General.readFile(file.getAbsolutePath() + "_" + timeslot + "S"));
 
                             }
@@ -517,11 +544,12 @@ public class Principal extends JPanel {
             public void actionPerformed(ActionEvent e) {
 
                 try {
-                    if (frequency == null) {
-                        localCmd.append(START_LINE + "Looking for " + mnGsmBand.getSelectedItem().toString() + " towers with "
+                    if (frequency.equals("")) {
+                        
+                        localCmd.append(START_LINE + "Scanning for " + mnGsmBand.getSelectedItem().toString() + " towers with "
                                 + String.valueOf(sliderGainKal.getValue()) + " of gain, please wait.\n");
                         localCmd.update(localCmd.getGraphics());
-                        ArrayList<String[]> cells = null;
+                        ArrayList<String[]> cells = new ArrayList<>();
                         try {
                             cells = Kalibrate.getGsmCell(mnGsmBand.getSelectedItem().toString(), String.valueOf(sliderGainKal.getValue()));
                         } catch (Exception e1) {
@@ -529,8 +557,7 @@ public class Principal extends JPanel {
                             localCmd.append(START_LINE + e1.getMessage() + "\n");
                             localCmd.update(localCmd.getGraphics());
                         }
-                        System.out.println(General.toStringALtabStr(cells)); // TODO : delete debug line
-
+                        
                         if (!(cells.isEmpty())) {
                             // Format frequency 
                             BigDecimal freq;
@@ -546,7 +573,7 @@ public class Principal extends JPanel {
 
                                 localCmd.append(START_LINE + "Cell [freq : " + cells.get(i)[0] + "Hz, power : " + cells.get(i)[1] + "]\n");
                                 localCmd.update(localCmd.getGraphics());
-                            }
+                            } 
                             String s = (String) JOptionPane.showInputDialog(
                                     frmTopguw,
                                     "Which frequency would you like to sniff ?\n Hz                Power ",

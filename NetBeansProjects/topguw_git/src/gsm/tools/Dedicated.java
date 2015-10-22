@@ -1,6 +1,28 @@
-/*
- * Dedicated.java                                     ENJALBERT BASTIEN
- * 21 Jun. 2015
+/* Dedicated.java
+ * --------------------------------- DISCLAMER ---------------------------------
+ * Copyright (c) 2015, Bastien Enjalbert All rights reserved.
+ * Redistribution and use in source and binary forms, with or without modification, 
+ * are permitted provided that the following conditions are met:
+ *
+ * Redistributions of source code must retain the above copyright notice, 
+ * this list of conditions and the following disclaimer.
+ * Redistributions in binary form must reproduce the above copyright notice, 
+ * this list of conditions and the following disclaimer in the documentation 
+ * and/or other materials provided with the distribution.
+
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. 
+ * IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, 
+ * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, 
+ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, 
+ * OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, 
+ * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * The views and conclusions contained in the software and documentation are 
+ * those of the authors and should not be interpreted as representing official 
+ * policies, either expressed or implied, of the FreeBSD Project.
  */
 package gsm.tools;
 
@@ -20,20 +42,6 @@ import java.util.regex.Matcher;
  */
 @SuppressWarnings("serial")
 public class Dedicated extends Principal {
-
-    public static void main(String[] args) {
-        try {
-            General.getAirprobeOutput(new File("/media/SAUVEGARDE/CFILE/rdz.12.juin.big.cfile"));
-        } catch (Exception e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-        System.out.println("RESULTAT GETBURST FROM FN : ");
-        for (String s : getBurstsFromFn("1218535")) {
-            System.out.println(s);
-        }
-
-    }
 
     /**
      * Convert ArrayList<String> into ArrayList<String[]> (split with spaces)
@@ -267,23 +275,22 @@ public class Dedicated extends Principal {
 
     /**
      * Check if a frame number is linked to a parity error (cannot decode)
-     *
      * @param fn the frame number
      * @return true if the frame seems unable to be decoded by airprobe
      */
     public static boolean isParityErr(String fn) {
 
+        // read dedicated channel (xS) line by line
         ArrayList<String> temp = General.readFile(file.getAbsolutePath() + "_" + timeslot + "S");
 
+        // and check if e found a parity error linked to the fn
         for (int i = 0; i < temp.size(); i++) {
             if (General.RGX_PARITY.matcher(temp.get(i)).matches()) {
                 Matcher recup_err = General.RGX_PARITY.matcher(temp.get(i));
                 if (recup_err.find()) {
                     if (recup_err.group(1).equals(fn));
-                    return true;
-                } else {
-                    return false;
-                }
+                        return true;
+                } 
             }
         }
 
