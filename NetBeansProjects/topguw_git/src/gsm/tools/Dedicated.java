@@ -220,16 +220,16 @@ public class Dedicated extends Principal {
                 for (int j = 0; j < dedicatedChannelTab.size(); j++) {
                     
                     if (dedicatedChannelTab.get(j).length == 4 // check the frame is correct (not an error or other thing)
-                            && isInteger(dedicatedChannelTab.get(j)[1])
-                            && Integer.parseInt(dedicatedChannelTab.get(j)[1]) > // possible si encrypted is after unencryted si
-                            Integer.parseInt(systemInfo.get(i)[0])
+                            && General.isInteger(dedicatedChannelTab.get(j)[1])
+                            // if frames(unencrypted and possible encrypted) are in the same place in the multi frame
                             && ((Integer.parseInt(dedicatedChannelTab.get(j)[1]) - Integer.parseInt(systemInfo.get(i)[0])) % 204  == 0)) {
                         
                         for (int a = 0; a < cipherModCommand.size(); a++) {
-                            // if the possible SI ciphered is after the Ciphering Mode Command : 
-                            if (Integer.parseInt(cipherModCommand.get(a)[0]) < Integer.parseInt(dedicatedChannelTab.get(j)[1])
-                                    && localDedicatedChannelFn != Integer.parseInt(dedicatedChannelTab.get(j)[1])
-                                    && isParityErr(dedicatedChannelTab.get(j)[1])) {System.out.println("one found");
+                            // the frame is after a ciphering mod command
+                            if(localDedicatedChannelFn != Integer.parseInt(dedicatedChannelTab.get(j)[1])
+                                    // the frame is encrypted 
+                                    && isParityErr(dedicatedChannelTab.get(j)[1])) {
+                                System.out.println("one found");
                                 String[] temp = new String[4];
                                 /*
                                  * ind 0 : SI plaintext Frame Number
@@ -302,29 +302,41 @@ public class Dedicated extends Principal {
      * @param fn the frame number
      * @return an array with at least one burst from the frame number (if other
      * bursts are missing in the dump), else 4 bursts are returned
+     * ind 0 first burst from the frame
+     * ind 1 a5/1 fn from the bursts
+     * ind 2 second burst from the frame
+     * ind 3 a5/1 fn from the bursts 
+     * ... etc
      */
-    public static String[] getBurstsFromFn(String fn) {
+    public static String[] getBurstsFromFn(String fn){
 
-        String[] bursts = new String[4];
-        for (int i = 0; i < 4; i++) {
+        String[] bursts = new String[8];
+        for (int i = 0; i < 8; i++) 
             bursts[i] = "no exist";
-        }
+        
         int integerFn = Integer.parseInt(fn);
-
         boolean finish = false;
 
         for (int i = 0; finish == false && i < dedicatedChannelTab.size(); i++) {
             String[] line = dedicatedChannelTab.get(i);
-
-            if (line.length == 4 && isInteger(line[1]) && line[0].charAt(0) == 'C') {
+            // check element from array is a ccch frame burst
+            if (line.length == 4 && line[0].length() == 2 && General.isInteger(line[1])
+                && (Integer.parseInt(line[1]) <= 2715647 || Integer.parseInt(line[1]) > 0)
+                     && line[0].charAt(0) == 'C') {
                 if (Integer.parseInt(line[1]) == integerFn - 3) {
+                    // add the burst
                     bursts[0] = line[3];
+                    // add a5/1 fn
+                    bursts[4] = line[2].substring(0, line[2].length()-1);
                 } else if (Integer.parseInt(line[1]) == integerFn - 2) {
                     bursts[1] = line[3];
+                    bursts[5] = line[2].substring(0, line[2].length()-1);
                 } else if (Integer.parseInt(line[1]) == integerFn - 1) {
                     bursts[2] = line[3];
+                    bursts[6] = line[2].substring(0, line[2].length()-1);
                 } else if (Integer.parseInt(line[1]) == integerFn) {
                     bursts[3] = line[3];
+                    bursts[7] = line[2].substring(0, line[2].length()-1);
                     finish = true;
                 } else {
                     // DO NOTHING
@@ -393,7 +405,7 @@ public class Dedicated extends Principal {
         for (int i = 0; i < enTableau.size(); i++) {
             String[] temp = new String[2];
             // Si fn % 102 == 32,47 -> on ajoute 
-            if (enTableau.get(i).length > 2 && isInteger(enTableau.get(i)[1])
+            if (enTableau.get(i).length > 2 && General.isInteger(enTableau.get(i)[1])
                     && (Integer.parseInt(enTableau.get(i)[1]) % 102 >= 32
                     && Integer.parseInt(enTableau.get(i)[1]) % 102 <= 47)
                     && !(tempFn.equals(enTableau.get(i)[1]))) {
@@ -414,34 +426,5 @@ public class Dedicated extends Principal {
         return lesSi;
     }
 
-    /**
-     * Detects whether a character string is formatted as a number
-     *
-     * @param str the string to test
-     * @return true if the string can be parsed into an interger, false if not
-     */
-    public static boolean isInteger(String str) {
-        if (str == null) {
-            return false;
-        }
-        int length = str.length();
-        if (length == 0) {
-            return false;
-        }
-        int i = 0;
-        if (str.charAt(0) == '-') {
-            if (length == 1) {
-                return false;
-            }
-            i = 1;
-        }
-        for (; i < length; i++) {
-            char c = str.charAt(i);
-            if (c <= '/' || c >= ':') {
-                return false;
-            }
-        }
-        return true;
-    }
-
+   
 }

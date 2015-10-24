@@ -285,8 +285,11 @@ public class General extends Principal {
             } else if (param == 2) {
                 for (int i = 0; i < array.size(); i++) {
                     for (int j = 0; j < array.get(i).length; j++) {
-                        outputFile.println(array.get(i)[j]);
+                        // don't write empty or null value
+                        if(!(array.get(i)[j] == null || array.get(i)[j].equals(""))) 
+                                outputFile.println(array.get(i)[j]);
                     }
+                    outputFile.println("-------------------");
                 }
             }
 
@@ -491,15 +494,15 @@ public class General extends Principal {
      * XOR two array (ind 0 with ind 0, ind 1 with ind 1, ...)
      *
      * @param beginBursts the array that contains bursts
-     * @param endBursts the second array that contains bursts
+     * @param endBursts the second array that contains bursts (and a5/1 fn) [encrypted]
      * @param fn the plaintext frame number
      * @param fnEnc the encrypted frame number
      * @return  all bursts (4 at maximum) xored
      */
     public static String[] xorBursts(String[] beginBursts, String[] endBursts, String fn, String fnEnc) {
-        String[] xoredBursts = new String[6];
-        xoredBursts[4] = fn;
-        xoredBursts[5] = fnEnc;
+        String[] xoredBursts = new String[10];
+        xoredBursts[8] = fn;
+        xoredBursts[9] = fnEnc;
 
         StringBuilder oneXoredBurst;
 
@@ -510,10 +513,29 @@ public class General extends Principal {
                     oneXoredBurst.append(beginBursts[j].charAt(i) ^ endBursts[j].charAt(i));
                 }
                 xoredBursts[j] = oneXoredBurst.toString();
+                
             } else {
-                xoredBursts[j] = "This burst is not correct, cannot xor it.";
+                xoredBursts[j] = "Incorrect bursts from capture, can't xor them.";
             }
         }
+        // add a5/1 frame number from encrypted frame to simplify crack steps
+        for(int i = 4; i < 8 ;i++) {
+            if(isInteger(endBursts[i])) {
+                xoredBursts[i] = "a5/1 burst fn = " + endBursts[i];
+            } 
+        }
+        // we reorganize the array to match bursts with a5/1 fn
+        // TODO ; make something more algorithmic
+        String temp2 = xoredBursts[1];
+        String temp3 = xoredBursts[2];
+        String temp4 = xoredBursts[3];
+        
+        xoredBursts[1] = xoredBursts[4];
+        xoredBursts[2] = temp2;
+        xoredBursts[3] = xoredBursts[5];
+        xoredBursts[4] = temp3;
+        xoredBursts[5] = xoredBursts[6];
+        xoredBursts[6] = temp4;
 
         return xoredBursts;
     }
@@ -627,7 +649,7 @@ public class General extends Principal {
      */
     public static boolean isInteger(String s) {
         try {
-            Long.parseLong(s);
+            Integer.parseInt(s);
         } catch (NumberFormatException e) {
             return false;
         } catch (NullPointerException e) {

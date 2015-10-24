@@ -79,6 +79,7 @@ public class Kalibrate {
                 String[] temp = new String[2];
                 BigDecimal add = null;
                 if (m.group(2).equals("+")) {
+                    // TODO : capture with a long (parsing)
                     add = new BigDecimal(Double.parseDouble(m.group(3)));
                 } else {
                     add = new BigDecimal(-(Double.parseDouble(m.group(3))));

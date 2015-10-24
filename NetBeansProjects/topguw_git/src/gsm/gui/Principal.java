@@ -24,16 +24,13 @@
  * those of the authors and should not be interpreted as representing official 
  * policies, either expressed or implied, of the FreeBSD Project.
  */
-
 package gsm.gui;
 
 import gsm.tools.Broadcast;
 import gsm.tools.Dedicated;
 import gsm.tools.General;
-import gsm.conf.Configuration ;
+import gsm.conf.Configuration;
 import gsm.tools.Kalibrate;
-
-
 
 import javax.swing.JFrame;
 import javax.swing.JButton;
@@ -68,7 +65,6 @@ import java.awt.Dimension;
 import java.awt.GridLayout;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 
 @SuppressWarnings("serial")
 public class Principal extends JPanel {
@@ -384,22 +380,31 @@ public class Principal extends JPanel {
                         //System.out.println("with encrypted  = " + encryptedSiPosition.get(i)[2]);
                         if (encryptedSiPosition.get(i)[0].equals(plaintextBursts.get(j)[4])) {
                             // WITH SOME OTHER INFORMATIONS
-                             temp = General.xorBursts(plaintextBursts.get(j),
-                             Dedicated.getBurstsFromFn(encryptedSiPosition.get(i)[2]),
-                             "know : " + plaintextBursts.get(j)[4],
-                             "enc : " + encryptedSiPosition.get(i)[2]
-                             );
-                             /********** WITHOUT OTHER INFORMATIONS **************/
-                           /* temp = General.xorBursts(plaintextBursts.get(j),
-                                    Dedicated.getBurstsFromFn(encryptedSiPosition.get(i)[2]));
+                            try {
+                                temp = General.xorBursts(plaintextBursts.get(j),
+                                        Dedicated.getBurstsFromFn(encryptedSiPosition.get(i)[2]),
+                                        "know : " + plaintextBursts.get(j)[4],
+                                        "enc : " + encryptedSiPosition.get(i)[2]
+                                );
+                                for (int jr = 0; jr < temp.length; jr++) // TODO : delete debug 
+                                {
+                                    System.out.println("temp " + jr + " = " + temp[jr]);
+                                }
+                                possibleKeystream.add(temp);
+                            } catch (NumberFormatException e2) {
+                                localCmd.append(START_LINE + "An error happend when we try to extract keystream, sorry. \n");
+                                localCmd.update(localCmd.getGraphics());
+                            }
                             /**
+                             * ******** WITHOUT OTHER INFORMATIONS
+                             * *************
+                             */
+                            /* temp = General.xorBursts(plaintextBursts.get(j),
+                             Dedicated.getBurstsFromFn(encryptedSiPosition.get(i)[2]));
+                             /**
                              * ***********************************************
                              */
-                            for (int jr = 0; jr < temp.length; jr++) // TODO : delete debug 
-                            {
-                                System.out.println("temp " + jr + " = " + temp[jr]);
-                            }
-                            possibleKeystream.add(temp);
+
                         }
 
                     }
@@ -478,7 +483,7 @@ public class Principal extends JPanel {
                     setFile(cfile_file.getSelectedFile());
 
                     try {
-                        localCmd.append(START_LINE + "Getting output for the file...\n");
+                        localCmd.append(START_LINE + "Getting channel outputs for the cfile, please wait...\n");
                         localCmd.update(localCmd.getGraphics());
                         if (General.alreadyDone(file)) {
                             int dialogResult = JOptionPane.showConfirmDialog(null,
@@ -542,7 +547,7 @@ public class Principal extends JPanel {
 
                 try {
                     if (frequency.equals("")) {
-                        
+
                         localCmd.append(START_LINE + "Scanning for " + mnGsmBand.getSelectedItem().toString() + " towers with "
                                 + String.valueOf(sliderGainKal.getValue()) + " of gain, please wait.\n");
                         localCmd.update(localCmd.getGraphics());
@@ -554,7 +559,7 @@ public class Principal extends JPanel {
                             localCmd.append(START_LINE + e1.getMessage() + "\n");
                             localCmd.update(localCmd.getGraphics());
                         }
-                        
+
                         if (!(cells.isEmpty())) {
                             // Format frequency 
                             BigDecimal freq;
@@ -570,7 +575,7 @@ public class Principal extends JPanel {
 
                                 localCmd.append(START_LINE + "Cell [freq : " + cells.get(i)[0] + "Hz, power : " + cells.get(i)[1] + "]\n");
                                 localCmd.update(localCmd.getGraphics());
-                            } 
+                            }
                             String s = (String) JOptionPane.showInputDialog(
                                     frmTopguw,
                                     "Which frequency would you like to sniff ?\n Hz                Power ",
@@ -582,10 +587,10 @@ public class Principal extends JPanel {
                             localCmd.append(START_LINE + "No gsm tower found, disconnet and reconnect RTL-SDR and try again.\n");
                             localCmd.append(START_LINE + "Maybe kalibrate-rtl is not working correctly too.\n");
                         }
-                    }
-						// Start sniffing
-                    // TODO snif with "rtl_sdr" command from kali
 
+                    // Start sniffing
+                        // TODO snif with "rtl_sdr" command from kali
+                    }
                     Process p = General.rtlSdrSnif(System.getProperty("user.dir"), frequency, Integer.toString(sliderGainKal.getValue()), "1e6").start();
 
                     // Allow user to stop sniffing when he wants to
@@ -600,7 +605,6 @@ public class Principal extends JPanel {
                             options[0]);
                     p.destroy();
                     p.destroyForcibly();
-                    // TODO : use C to convert the binary file into a cfile
                     localCmd.append(START_LINE + "Start converting the binary file into a cfile.\n");
                     localCmd.update(localCmd.getGraphics());
                     General.binToCfile(new File(frequency + "_AIRPROBE_OUTPUT_BIN"));
@@ -609,55 +613,53 @@ public class Principal extends JPanel {
                 } catch (IOException ex) {
                     Logger.getLogger(Principal.class.getName()).log(Level.SEVERE, null, ex);
                 }
-            
-            localCmd.update(localCmd.getGraphics());
-            
-            }
-            
-        });
-    btnGo.setVisible (
 
-    false);
-    btnGo.setBounds (
-    650, 30, 108, 25);
+                localCmd.update(localCmd.getGraphics());
+
+            }
+
+        });
+        btnGo.setVisible(
+                false);
+        btnGo.setBounds(
+                650, 30, 108, 25);
 
         /**
          * SCAN GSM BUTTON
          */
         JButton btnScanGsmCell = new JButton("Scan/sniff GSM cell");
 
-    btnScanGsmCell.addActionListener ( new ActionListener() {
-            
+        btnScanGsmCell.addActionListener(new ActionListener() {
 
-    public void actionPerformed(ActionEvent e) {
-        if (JOptionPane.showConfirmDialog(null, "Do you want to try scan for"
-                + " GSM tower[YES] or sniff a frequency[NO].", "Scan or snif",
-                JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE)
-                == JOptionPane.YES_OPTION) {
-            lblGain.setVisible(true);
-            sliderGainKal.setVisible(true);
-            mnGsmBand.setVisible(true);
-            btnGo.setVisible(true);
-        } else {
-            String fr = JOptionPane.showInputDialog(frmTopguw,
-                    "Which frequency do you want to snif (in Hz) ?");
-            if (General.isInteger(fr) && fr.length() == 9) {
-                frequency = fr;
-                lblGain.setVisible(true);
-                sliderGainKal.setVisible(true);
-                mnGsmBand.setVisible(true);
-                btnGo.setVisible(true);
-                localCmd.append(START_LINE + "Frequency " + fr +  "is correctly settup.\n");
-            } else {
-                localCmd.append(START_LINE + "Specified frequency seems not to be valid.\n");
-               
+            public void actionPerformed(ActionEvent e) {
+                if (JOptionPane.showConfirmDialog(null, "Do you want to try scan for"
+                        + " GSM tower[YES] or sniff a frequency[NO].", "Scan or snif",
+                        JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE)
+                        == JOptionPane.YES_OPTION) {
+                    lblGain.setVisible(true);
+                    sliderGainKal.setVisible(true);
+                    mnGsmBand.setVisible(true);
+                    btnGo.setVisible(true);
+                } else {
+                    String fr = JOptionPane.showInputDialog(frmTopguw,
+                            "Which frequency do you want to snif (in Hz) ?");
+                    if (General.isInteger(fr) && fr.length() == 9) {
+                        frequency = fr;
+                        lblGain.setVisible(true);
+                        sliderGainKal.setVisible(true);
+                        mnGsmBand.setVisible(true);
+                        btnGo.setVisible(true);
+                        localCmd.append(START_LINE + "Frequency " + fr + "is correctly settup.\n");
+                    } else {
+                        localCmd.append(START_LINE + "Specified frequency seems not to be valid.\n");
+
+                    }
+                    localCmd.update(localCmd.getGraphics());
+                }
+
             }
-            localCmd.update(localCmd.getGraphics());
         }
-
-    }
-}
-);
+        );
         btnScanGsmCell.setBounds(57, 30, 131, 25);
 
         /**
@@ -716,7 +718,7 @@ public class Principal extends JPanel {
         // We check that all process are exited before quit
         frmTopguw.addWindowListener(new WindowAdapter() {
             @Override
-        public void windowClosing(WindowEvent e) {
+            public void windowClosing(WindowEvent e) {
                 // TODO : delete 
                 // not really a problem, nothing stuck after exit (still if something is working)
                 // reassess this
